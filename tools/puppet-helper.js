@@ -85,37 +85,81 @@ const runAlone = async function (page, xpath, text, comment, action) {
     "context": {
       "JKB": "컨텐츠 페이지"
     }
+  {
+    "entities": [
+      "[이벤트] 오브젝트"
+    ],
+    "intent": "Click Element",
+    "tag": "Click Element",
+    "text": "add 버튼을 클릭한다.",
+    "context": {
+      "JKO": "add 버튼"
+    }
+  },
+  {
+    "entities": [
+      "[이벤트] 입력 창",
+      "입력 할 텍스트"
+    ],
+    "intent": "Input Text",
+    "tag": "Input Text",
+    "text": "playlist name을 rosatest로 입력한다",
+    "context": {
+      "JKO": "playlist name",
+      "JKB": "rosatest"
+    }
+  },
+
 */
 
+let flag = false
+
 async function wait(ms) {
-    return new Promise((r, j) => {
-        setTimeout(resolve => {
-            pubsub.subscribe('CLICK', function( msg, data ){
-                console.log(arguments)
-                resolve();
-            }, r)
-        }, ms);
+    return new Promise((resolve, reject) => {
+        let id = setInterval(() => {
+            console.log('interval Flag : ' + flag)
+            if(flag) {
+                clearInterval(id)
+                resolve()
+            }
+        }, ms)
     })
 }
 
-const runStep = async function (step) {
-    let entities = step.entities
-    let intent = step.intent
-    let tag = step.tag
-    let text = step.text
+let currentStep = {}
+
+const _setCurrentStep = function (step, page) {
     let contents = Object.values(step.context)
+    let intent = step.intent
+    let obj = {
+        page : page,
+        entities : step.entities,
+        intent : intent,
+        tag : step.tag,
+        text : step.text,
+        contents : contents,
+        target : contents[0],
+        input : (contents[1]) ? contents[1] : null,
+        action : (intent.indexOf('Input')==0) ? 'type' : 'click'
+    }
+    currentStep = obj
+}
 
-    console.log('=-=========settimeoutstart')
-    //TODO WAIT COMMAND CLICK IN BROWSER
-    // var wait = (ms) => new Promise((resolve, reject)=>setTimeout(resolve, ms))
-    await wait(10000)
-    // pubsub.subscribe('CLICK', function( msg, data ){
-    //     console.log('====subscribe======')
-    //     console.log(msg)
-    //     console.log( data )
-    // })
+pubsub.subscribe('CLICK', async function (msg, data) {
+    // await runAlone(currentStep.page, data.xpath, currentStep.input, currentStep.text, currentStep.action)
+    flag = true;
+    console.log('flag : ' + flag)
+})
 
-    console.log('=-=========23=2=423=4')
+const runStep = async function (step, page) {
+    _setCurrentStep(step, page)
+
+    await page.evaluate(text => {
+        document.querySelector('#bound-dog-guidance').innerHTML = text;
+    }, currentStep.text);
+
+    await wait(1000)
+    flag = false;
 }
 
 async function _addsignOptions (defaults, additional) {

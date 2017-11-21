@@ -12,12 +12,6 @@ router.get('/', function (req, res, next) {
     res.render('index', {title: 'Baund-dog'})
 })
 
-// pubsub.subscribe('CLICK', function( msg, data ){
-//     console.log('====subscribe======')
-//     console.log(msg)
-//     console.log( data )
-// })
-
 router.post('/', function (req, res, next) {
     console.log('post method')
     if (!req.body) return res.sendStatus(400)
@@ -50,46 +44,48 @@ router.post('/', function (req, res, next) {
         for (let i = 0 ; i < data.length ; i++) {
             let step = data[i]
             if(step.entities.includes('url')) continue
-            await puppethelper.runStep(step)
+            await puppethelper.runStep(step, page)
+            console.log('runstep ========== ' + i)
             //TODO every step goes through runAlone()
         }
 
-        //Add 버튼을 클릭한다.
-        let xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[2]/div'
-        // let xpath = ''
-        let comment = 'Add 버튼을 클릭한다.'
-        await puppethelper.runAlone(page, xpath, null, comment, 'click')
-
-        //New playlist 메뉴를 선택한다.
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[6]'
-        comment = 'New playlist 메뉴를 선택한다.'
-        await puppethelper.runAlone(page, xpath, null, comment, 'click')
-
-        //Playlist 이름을 rosatest로 입력한다
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input'
-        comment = 'Playlist 이름을 rosatest로 입력한다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'type')
-
-        //Target Resolution을
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label'
-        comment = 'Target Resolution을'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
-
-        //HD 가로로 선택한다.
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]'
-        comment = 'HD 가로로 선택한다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
-
-        //CREATE 버튼을 클릭한다
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]'
-        text = 'CREATE 버튼을 클릭한다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
-
-        //Playlist 페이지가 나타난다
-        xpath = '//*[@id="root"]/div/div[1]/div/div[1]/div[1]'
-        comment = 'Playlist 페이지가 나타난다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'none')
-        // console.log(await handle.getProperty('textContent'))
+        // //Add 버튼을 클릭한다.
+        // // let xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[2]/div'
+        // let xpath = 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]'
+        // let comment = 'Add 버튼을 클릭한다.'
+        // await puppethelper.runAlone(page, xpath, null, comment, 'click')
+        //
+        // //New playlist 메뉴를 선택한다.
+        // // xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[6]'
+        // xpath = 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[4]/div[1]/div[6]'
+        // comment = 'New playlist 메뉴를 선택한다.'
+        // await puppethelper.runAlone(page, xpath, null, comment, 'click')
+        //
+        // //Playlist 이름을 rosatest로 입력한다
+        // xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input'
+        // comment = 'Playlist 이름을 rosatest로 입력한다'
+        // await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'type')
+        //
+        // //Target Resolution을
+        // xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label'
+        // comment = 'Target Resolution을'
+        // await puppethelper.runAlone(page, xpath, 'rosatest', comment)
+        //
+        // //HD 가로로 선택한다.
+        // xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]'
+        // comment = 'HD 가로로 선택한다'
+        // await puppethelper.runAlone(page, xpath, 'rosatest', comment)
+        //
+        // //CREATE 버튼을 클릭한다
+        // xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]'
+        // text = 'CREATE 버튼을 클릭한다'
+        // await puppethelper.runAlone(page, xpath, 'rosatest', comment)
+        //
+        // //Playlist 페이지가 나타난다
+        // xpath = '//*[@id="root"]/div/div[1]/div/div[1]/div[1]'
+        // comment = 'Playlist 페이지가 나타난다'
+        // await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'none')
+        // // console.log(await handle.getProperty('textContent'))
 
         let result = []
         // const handles = await collector.grap(page, text);
