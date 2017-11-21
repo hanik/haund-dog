@@ -1,84 +1,95 @@
 var express = require('express')
 const puppethelper = require('../tools/puppet-helper')
-const collector = require('../tools/element-collector')
+const pubsub = require('pubsub-js')
 var router = express.Router()
 
 let url = 'http://52.78.181.46/'
-let id = 'nexshop'
-let pw = 'wearethe1'
+if (process.env.url) {
+    url = process.env.url
+}
 
 router.get('/', function (req, res, next) {
     res.render('index', {title: 'Baund-dog'})
 })
 
+// pubsub.subscribe('CLICK', function( msg, data ){
+//     console.log('====subscribe======')
+//     console.log(msg)
+//     console.log( data )
+// })
+
 router.post('/', function (req, res, next) {
     console.log('post method')
     if (!req.body) return res.sendStatus(400)
 
-    let data = req.body;
-    console.log(data);
+    let data = req.body
+    console.log('data.length : ' + data.length);
 
     (async () => {
-        let page = await puppethelper.getPage(url);
+        let launchoptions = {
+            headless: false
+        }
+        let page = await puppethelper.getPage(url, launchoptions)
         
         // inject script code for RECODING :-(
         await page.addScriptTag({
             path: './tools/injects/scripts.js'
         })
+        //TODO Jquery for find events from element. Does jquery need?
+        // await pathmaker.useJquery(page)
 
         page.on('console', msg => {
-            console.log(msg.text)
-        });
-
-        let hasJquery = true
-        try {
-            let version = await page.evaluate(() => $.fn.jquery)
-            hasJquery = true;
-        } catch (err) {
-            console.log('The page has no jquery.')
-        }
-
-        if (!hasJquery) {
-            console.log('Add jquery script tag')
-            let scriptTagOption = {
-                url: 'https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'
+            const messageparam = 'bd-message::'
+            if (msg.text.indexOf(messageparam) === 0) {
+                let messageText = msg.text.replace(messageparam, '')
+                let json = JSON.parse(messageText)
+                pubsub.publish('CLICK', json)
             }
-            await page.addScriptTag(scriptTagOption)
+        })
+
+        for (let i = 0 ; i < data.length ; i++) {
+            let step = data[i]
+            if(step.entities.includes('url')) continue
+            await puppethelper.runStep(step)
+            //TODO every step goes through runAlone()
         }
 
         //Add 버튼을 클릭한다.
         let xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[2]/div'
-        let handle = await collector.gethandle(page, xpath)
-        await handle.click()
+        // let xpath = ''
+        let comment = 'Add 버튼을 클릭한다.'
+        await puppethelper.runAlone(page, xpath, null, comment, 'click')
 
         //New playlist 메뉴를 선택한다.
         xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[6]'
-        handle = await collector.gethandle(page, xpath)
-        await handle.click()
+        comment = 'New playlist 메뉴를 선택한다.'
+        await puppethelper.runAlone(page, xpath, null, comment, 'click')
 
         //Playlist 이름을 rosatest로 입력한다
         xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input'
-        handle = await collector.gethandle(page, xpath)
-        await handle.type('rosatest')
+        comment = 'Playlist 이름을 rosatest로 입력한다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'type')
 
-        //Target Resolution을 
+        //Target Resolution을
         xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label'
-        handle = await collector.gethandle(page, xpath)
-        await handle.click()
+        comment = 'Target Resolution을'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
 
         //HD 가로로 선택한다.
         xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]'
-        handle = await collector.gethandle(page, xpath)
-        await handle.click()
+        comment = 'HD 가로로 선택한다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
 
         //CREATE 버튼을 클릭한다
         xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]'
-        handle = await collector.gethandle(page, xpath)
-        await handle.click()
+        text = 'CREATE 버튼을 클릭한다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
 
+        //Playlist 페이지가 나타난다
         xpath = '//*[@id="root"]/div/div[1]/div/div[1]/div[1]'
-        handle = await collector.gethandle(page, xpath)
-        console.log(await handle.getProperty('textContent'))
+        comment = 'Playlist 페이지가 나타난다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'none')
+        // console.log(await handle.getProperty('textContent'))
 
         let result = []
         // const handles = await collector.grap(page, text);
@@ -105,11 +116,12 @@ router.post('/', function (req, res, next) {
         //     }
         // }
 
-        await puppethelper.close(page)
+        // await puppethelper.close(page)
 
         res.send(JSON.stringify(result))
     })();
 })
+
 
 module.exports = router;
 

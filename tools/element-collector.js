@@ -5,7 +5,6 @@ const pathmaker = require('./path-maker')
 
 const gethandle = async function(page, xpath) {
     const resultHandle = await page.evaluateHandle(xpath => {
-        console.log(xpath);
         let query = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
         return query.singleNodeValue;
     }, xpath)
