@@ -15,26 +15,26 @@ function getElementByXPath(path) {
         XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 }
 
-let boundDogGuidance = document.createElement('div');
-boundDogGuidance.id = 'bound-dog-guidance';
-boundDogGuidance.style.color = 'yellow';
-boundDogGuidance.style.position = 'absolute';
-boundDogGuidance.style.top = '0px';
-boundDogGuidance.style.left = '0px';
-boundDogGuidance.style.background = 'black';
-boundDogGuidance.style.borderRadius = '6px';
-boundDogGuidance.style.opacity = '0.6';
-boundDogGuidance.style.padding = '30px 30px 20px 30px';
-boundDogGuidance.style.fontSize = '80px';
-document.getElementsByTagName('body')[0].appendChild(boundDogGuidance);
+let baundDogGuidance = document.createElement('div');
+baundDogGuidance.id = 'baund-dog-guidance';
+baundDogGuidance.style.color = 'yellow';
+baundDogGuidance.style.position = 'absolute';
+baundDogGuidance.style.top = '0px';
+baundDogGuidance.style.left = '0px';
+baundDogGuidance.style.background = 'black';
+baundDogGuidance.style.borderRadius = '6px';
+baundDogGuidance.style.opacity = '0.6';
+baundDogGuidance.style.padding = '30px 30px 20px 30px';
+baundDogGuidance.style.fontSize = '80px';
+document.getElementsByTagName('body')[0].appendChild(baundDogGuidance);
 
-boundDogGuidance.addEventListener('mouseover', function (e) {
-    if (boundDogGuidance.style.top === '0px') {
-        boundDogGuidance.style.top = null;
-        boundDogGuidance.style.bottom = '0px';
+baundDogGuidance.addEventListener('mouseover', function (e) {
+    if (baundDogGuidance.style.top === '0px') {
+        baundDogGuidance.style.top = null;
+        baundDogGuidance.style.bottom = '0px';
     } else {
-        boundDogGuidance.style.top = '0px';
-        boundDogGuidance.style.bottom = null;
+        baundDogGuidance.style.top = '0px';
+        baundDogGuidance.style.bottom = null;
     }
 })
 
@@ -43,7 +43,7 @@ let listener = function (e) {
     let xpath = getXPathForElement(this)
     let message = {
         type: 'bd-element-click',
-        message: boundDogGuidance.innerText.replace(',', ''),
+        message: baundDogGuidance.innerText.replace(',', ''),
         xpath: xpath
     }
     console.log('bd-message::' + JSON.stringify(message))

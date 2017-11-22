@@ -1,59 +1,62 @@
 var express = require('express')
 const puppethelper = require('../tools/puppet-helper')
-const pubsub = require('pubsub-js')
 var router = express.Router()
 
-let url = process.env.url || 'http://52.78.181.46/'
+let url = 'http://52.78.181.46/' || process.env.url
 
 router.get('/', function (req, res, next) {
-    res.render('index', {title: 'Baund-dog'})
-})
-
-router.post('/', function (req, res, next) {
-    console.log('baund-dog post method')
-    console.log(next)
-    if (!req.body) return res.sendStatus(400)
-
-    let data = req.body 
-    console.log('data.length : ' + data.length);
-
     (async () => {
         let launchoptions = {
             headless: false
         }
         let page = await puppethelper.getPage(url, launchoptions)
-        
-        // inject script code for RECODING :-(
+
         await page.addScriptTag({
             path: './tools/injects/scripts.js'
-        }) 
-        //TODO Jquery for find events from element. Does jquery need?
-        // await pathmaker.useJquery(page)
-
-        page.on('console', msg => {
-            const messageparam = 'bd-message::'
-            if (msg.text.indexOf(messageparam) === 0) {
-                let messageText = msg.text.replace(messageparam, '')
-                let json = JSON.parse(messageText)
-                pubsub.publish('CLICK', json)
-            }
         })
 
-        for (let i = 0 ; i < data.length ; i++) {
-            let step = data[i]
-            if(step.entities.includes('url')) continue
-            await puppethelper.runStep(step, page)
-            console.log('runstep ========== ' + i)
-            //TODO every step goes through runAlone()
-        }
+        //Add 버튼을 클릭한다.
+        let xpath = 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]'
+        let comment = 'Add 버튼을 클릭한다.'
+        await puppethelper.runAlone(page, xpath, null, comment, 'click')
+        
+        //New playlist 메뉴를 선택한다.
+        xpath = 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[4]/div[1]/div[6]'
+        comment = 'New playlist 메뉴를 선택한다.'
+        await puppethelper.runAlone(page, xpath, null, comment, 'click')
+        
+        //Playlist 이름을 rosatest로 입력한다
+        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input'
+        comment = 'Playlist 이름을 rosatest로 입력한다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'type')
+        
+        //Target Resolution을
+        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label'
+        comment = 'Target Resolution을'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
+        
+        //HD 가로로 선택한다.
+        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]'
+        comment = 'HD 가로로 선택한다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
+        
+        //CREATE 버튼을 클릭한다
+        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]'
+        text = 'CREATE 버튼을 클릭한다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
+        
+        //Playlist 페이지가 나타난다
+        xpath = '//*[@id="root"]/div/div[1]/div/div[1]/div[1]'
+        comment = 'Playlist 페이지가 나타난다'
+        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'none')
+        // console.log(await handle.getProperty('textContent'))
 
-        let result = ['on-going...']
-        // await puppethelper.close(page)
+        let result = []        
+        await puppethelper.close(page)
 
         res.send(JSON.stringify(result))
     })();
 })
-
 
 module.exports = router;
 
@@ -62,7 +65,7 @@ module.exports = router;
 //TODO module function 스타일 변경
 //TODO async await excption handling 확인하기
 
-/* 
+/*
 컨텐츠 페이지에 접속한다.
 {"context": {"JKB": "컨텐츠 페이지"}, "entities": ["url", "브라우저 종류"], "intent": "Open Browser", "tag": "Open Browser", "text": "컨텐츠 페이지에 접속한다."}
 
