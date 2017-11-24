@@ -1,12 +1,12 @@
 /**
  * tools.spec.js
  */
-var should = require('should');
-let pathmaker = require('../tools/path-maker')
+// const should = require('should')
+const pathmaker = require('../tools/path-maker')
 
-describe('path-maker', function () {
-    it('should return xpath string.', function () {
-        let xpath = pathmaker.getPath('pathText')
+describe('path-maker', () => {
+    it('should return xpath string.', () => {
+        const xpath = pathmaker.getPath('pathText')
         xpath.should.be.containEql('pathText')
-    });
-});
+    })
+})

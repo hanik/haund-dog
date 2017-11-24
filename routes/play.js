@@ -1,69 +1,89 @@
-var express = require('express')
+const express = require('express')
 const puppethelper = require('../tools/puppet-helper')
-var router = express.Router()
 
-let url = 'http://52.78.181.46/' || process.env.url
+const router = express.Router()
 
-router.get('/', function (req, res, next) {
+const url = 'http://52.78.181.46/' || process.env.url
+const runArray = []
+
+router.get('/', (req, res) => {
     (async () => {
-        let launchoptions = {
-            headless: false
+        const launchoptions = {
+            headless: false,
         }
-        let page = await puppethelper.getPage(url, launchoptions)
+        const page = await puppethelper.getPage(url, launchoptions)
 
         await page.addScriptTag({
-            path: './tools/injects/scripts.js'
+            path: './tools/injects/scripts.js',
         })
 
-        //Add 버튼을 클릭한다.
-        let xpath = 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]'
-        let comment = 'Add 버튼을 클릭한다.'
-        await puppethelper.runAlone(page, xpath, null, comment, 'click')
-        
-        //New playlist 메뉴를 선택한다.
-        xpath = 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[4]/div[1]/div[6]'
-        comment = 'New playlist 메뉴를 선택한다.'
-        await puppethelper.runAlone(page, xpath, null, comment, 'click')
-        
-        //Playlist 이름을 rosatest로 입력한다
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input'
-        comment = 'Playlist 이름을 rosatest로 입력한다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'type')
-        
-        //Target Resolution을
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label'
-        comment = 'Target Resolution을'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
-        
-        //HD 가로로 선택한다.
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]'
-        comment = 'HD 가로로 선택한다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
-        
-        //CREATE 버튼을 클릭한다
-        xpath = '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]'
-        text = 'CREATE 버튼을 클릭한다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment)
-        
-        //Playlist 페이지가 나타난다
-        xpath = '//*[@id="root"]/div/div[1]/div/div[1]/div[1]'
-        comment = 'Playlist 페이지가 나타난다'
-        await puppethelper.runAlone(page, xpath, 'rosatest', comment, 'none')
-        // console.log(await handle.getProperty('textContent'))
+        // TODO XPath list from somewhere kindof database
+        // Add 버튼을 클릭한다.
+        runArray.push({
+            xpath: 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]',
+            comment: 'Add 버튼을 클릭한다.',
+            action: 'click',
+        })
+        // New playlist 메뉴를 선택한다.
+        runArray.push({
+            xpath: 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[4]/div[1]/div[6]',
+            comment: 'New playlist 메뉴를 선택한다.',
+            action: 'click',
+        })
+        // Playlist 이름을 rosatest로 입력한다
+        runArray.push({
+            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input',
+            comment: 'Playlist 이름을 rosatest로 입력한다',
+            text: 'rosatest',
+            action: 'type',
+        })
+        // Target Resolution을
+        runArray.push({
+            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label',
+            comment: 'Target Resolution을',
+            action: 'click',
+        })
+        // HD 가로로 선택한다.
+        runArray.push({
+            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]',
+            comment: 'HD 가로로 선택한다',
+            action: 'click',
+        })
+        // CREATE 버튼을 클릭한다
+        runArray.push({
+            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]',
+            comment: 'CREATE 버튼을 클릭한다',
+            action: 'click',
+        })
+        // Playlist 페이지가 나타난다
+        runArray.push({
+            xpath: '//*[@id="root"]/div/div[1]/div/div[1]/div[1]',
+            comment: 'Playlist 페이지가 나타난다',
+            action: 'none',
+        })
 
-        let result = []        
+        for (let i = 0; i < runArray.length; i++) {
+            const run = runArray[i]
+            try {
+                await puppethelper.runAlone(page, run.xpath, run.text, run.comment, run.action)
+            } catch (error) {
+                console.error(`runAlone ERROR:: ${error.message}`)
+            }
+        }
+
+        const result = ['Success.']
         await puppethelper.close(page)
 
         res.send(JSON.stringify(result))
-    })();
+    })()
 })
 
-module.exports = router;
+module.exports = router
 
-//TODO 각 기능들 module.exports 해서 router 로 넣어주기
-//TODO 각 기능들 export 할때 내부 소스코드들 export 해주기
-//TODO module function 스타일 변경
-//TODO async await excption handling 확인하기
+// TODO 각 기능들 module.exports 해서 router 로 넣어주기
+// TODO 각 기능들 export 할때 내부 소스코드들 export 해주기
+// TODO module function 스타일 변경
+// TODO async await excption handling 확인하기
 
 /*
 컨텐츠 페이지에 접속한다.

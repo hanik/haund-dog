@@ -2,6 +2,7 @@
 path-maker.js for make xpath text for find target
  */
 
+//TODO split for behavior
 const getPath = function (text) {
     // let path = '//*[text()="' + text.trim() + '"]';
     let path = '//*[contains(text(), "' + text.trim() + '")]'

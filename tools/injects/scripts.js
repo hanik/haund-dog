@@ -1,3 +1,5 @@
+//TODO split for usecases
+
 function getXPathForElement(element) {
     const idx = (sib, name) => sib
         ? idx(sib.previousElementSibling, name || sib.localName) + (sib.localName == name)
@@ -28,7 +30,7 @@ baundDogGuidance.style.padding = '30px 30px 20px 30px';
 baundDogGuidance.style.fontSize = '80px';
 document.getElementsByTagName('body')[0].appendChild(baundDogGuidance);
 
-baundDogGuidance.addEventListener('mouseover', function (e) {
+baundDogGuidance.addEventListener('mouseover', e => {
     if (baundDogGuidance.style.top === '0px') {
         baundDogGuidance.style.top = null;
         baundDogGuidance.style.bottom = '0px';
@@ -39,7 +41,7 @@ baundDogGuidance.addEventListener('mouseover', function (e) {
 })
 
 let onelement
-let listener = function (e) {
+let listener = e => {
     let xpath = getXPathForElement(this)
     let message = {
         type: 'bd-element-click',

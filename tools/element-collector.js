@@ -11,12 +11,13 @@ const gethandle = async function(page, xpath) {
     return resultHandle;
 }
 
-const grap = async function(page, text) {
+const grab = async function(page, text) {
     let path = pathmaker.getPath(text)
 
     const resultsHandle = await page.evaluateHandle(path => {
         let results = [];
 
+        // TODO FILTER 로 축약할수있나 확인
         let query = document.evaluate(path, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         for (let i = 0; i < query.snapshotLength; i++) {
             try{
@@ -51,5 +52,5 @@ const grap = async function(page, text) {
 
 module.exports = {
     gethandle,
-    grap
+    grab
 }

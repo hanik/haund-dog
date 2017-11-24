@@ -1,24 +1,25 @@
 /**
  * users.spec.js
  */
-var should = require('should');
-var users = require('../routes/users');
-var app = require('../app');
-var httpMocks = require('node-mocks-http');
-req = httpMocks.createRequest({
+const should = require('should')
+const users = require('../routes/users')
+const app = require('../app')
+const httpMocks = require('node-mocks-http')
+
+const req = httpMocks.createRequest({
     method: 'GET',
     url: '/',
-    eventEmitter: require('events').EventEmitter
-});
-res = httpMocks.createResponse();
+    eventEmitter: require('events').EventEmitter,
+})
+const res = httpMocks.createResponse()
 
-describe('Users', function () {
-    it('should return the statusCode 200', function () {
-    });
+describe('Users', () => {
+    it('should return the statusCode 200', () => {
+    })
 
-    it('should return user array', function () {
-    });
-});
+    it('should return user array', () => {
+    })
+})
 
 // describe('Users Mock', function () {
 //     it('should return the statusCode 200', function () {

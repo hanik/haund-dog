@@ -6,6 +6,8 @@ let browser
 let flag = false
 let currentStep = {}
 
+
+//TODO split for behavior
 const screenshot = async function (handle, additionalOptions) {
     let options = {}
     if(!additionalOptions || !additionalOptions.path) {
@@ -24,15 +26,18 @@ const screenshot = async function (handle, additionalOptions) {
 }
 
 const getPage = async function (url, additionalOptions) {
+    //TODO find and apply target page size
     let options = {
         headless: true,
         devtools: false,
-        // slowMo: 100,
-        // timeout: 30000
+        timeout: 30000,
+        slowMo: 100,
+        args: ['--window-size=1280,960']
     }
     options = _addsignOptions(options, additionalOptions)
     if(!browser) browser = await puppeteer.launch(options)
-    let page = await browser.newPage()
+    let pages = await browser.pages()
+    let page = await pages[0]
     await _handleAuth(page)
 
     let viewport = {
@@ -69,6 +74,7 @@ const runAlone = async function (page, xpath, text, comment, action) {
     }, comment)
     let handle = await collector.gethandle(page, xpath)
     await page.waitFor(1000)
+    //TODO json
     if(action === 'type') {
         await handle.type(text)
     } else if (action === 'none'){
@@ -77,6 +83,8 @@ const runAlone = async function (page, xpath, text, comment, action) {
     }
 }
 
+
+//TODO 추가논의
 async function _wait(ms) {
     return new Promise((resolve, reject) => {
         let id = setInterval(() => {
@@ -125,11 +133,12 @@ const runStep = async function (step, page) {
 function _addsignOptions (defaults, additional) {
     let options = defaults
     if(additional) {
+        //TODO refactoring
         Object.assign(options, additional)
     }
     return options
 }
-    
+
 async function _handleAuth (page, id, pw) {
     let user = 'nexshop'
     let pass = 'wearethe1'

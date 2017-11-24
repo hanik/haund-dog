@@ -1,68 +1,73 @@
-var express = require('express')
+const express = require('express')
 const puppethelper = require('../tools/puppet-helper')
 const pubsub = require('pubsub-js')
-var router = express.Router()
 
-let url = process.env.url || 'http://52.78.181.46/'
+const router = express.Router()
 
-router.get('/', function (req, res, next) {
-    res.render('index', {title: 'Baund-dog'})
+const url = process.env.url || 'http://52.78.181.46/'
+
+router.get('/', (req, res) => {
+    res.render('index', { title: 'Baund-dog' })
 })
 
-router.post('/', function (req, res, next) {
+router.post('/', (req, res, next) => {
     console.log('baund-dog post method')
     console.log(next)
     if (!req.body) return res.sendStatus(400)
 
-    let data = req.body 
-    console.log('data.length : ' + data.length);
+    const data = req.body
+    console.log(`data.length : ${data.length}`)
 
-    (async () => {
-        let launchoptions = {
-            headless: false
+    return (async () => {
+        const launchoptions = {
+            headless: false,
         }
-        let page = await puppethelper.getPage(url, launchoptions)
-        
+        const page = await puppethelper.getPage(url, launchoptions)
+
         // inject script code for RECODING :-(
         await page.addScriptTag({
-            path: './tools/injects/scripts.js'
-        }) 
-        //TODO Jquery for find events from element. Does jquery need?
+            path: './tools/injects/scripts.js',
+        })
+        // TODO Jquery for find events from element. Does jquery need?
         // await pathmaker.useJquery(page)
 
-        page.on('console', msg => {
+        page.on('console', (msg) => {
             const messageparam = 'bd-message::'
             if (msg.text.indexOf(messageparam) === 0) {
-                let messageText = msg.text.replace(messageparam, '')
-                let json = JSON.parse(messageText)
+                const messageText = msg.text.replace(messageparam, '')
+                const json = JSON.parse(messageText)
                 pubsub.publish('CLICK', json)
             }
         })
 
-        for (let i = 0 ; i < data.length ; i++) {
-            let step = data[i]
-            if(step.entities.includes('url')) continue
-            await puppethelper.runStep(step, page)
-            console.log('runstep ========== ' + i)
-            //TODO every step goes through runAlone()
+        for (let i = 0; i < data.length; i++) {
+            const step = data[i]
+            if (!step.entities.includes('url')) {
+                console.log(`runstep  ${i}`)
+                try {
+                    await puppethelper.runStep(step, page)
+                } catch (error) {
+                    console.error(`runStep ERROR:: ${error.message}`)
+                }
+            }
         }
 
-        let result = ['on-going...']
+        const result = ['on-going...']
         // await puppethelper.close(page)
 
-        res.send(JSON.stringify(result))
-    })();
+        return res.send(JSON.stringify(result))
+    })()
 })
 
 
-module.exports = router;
+module.exports = router
 
-//TODO 각 기능들 module.exports 해서 router 로 넣어주기
-//TODO 각 기능들 export 할때 내부 소스코드들 export 해주기
-//TODO module function 스타일 변경
-//TODO async await excption handling 확인하기
+// TODO 각 기능들 module.exports 해서 router 로 넣어주기
+// TODO 각 기능들 export 할때 내부 소스코드들 export 해주기
+// TODO module function 스타일 변경
 
-/* 
+
+/*
 컨텐츠 페이지에 접속한다.
 {"context": {"JKB": "컨텐츠 페이지"}, "entities": ["url", "브라우저 종류"], "intent": "Open Browser", "tag": "Open Browser", "text": "컨텐츠 페이지에 접속한다."}
 
