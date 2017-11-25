@@ -17,28 +17,43 @@ function getElementByXPath(path) {
         XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 }
 
-let baundDogGuidance = document.createElement('div');
-baundDogGuidance.id = 'baund-dog-guidance';
-baundDogGuidance.style.color = 'yellow';
-baundDogGuidance.style.position = 'absolute';
-baundDogGuidance.style.top = '0px';
-baundDogGuidance.style.left = '0px';
-baundDogGuidance.style.background = 'black';
-baundDogGuidance.style.borderRadius = '6px';
-baundDogGuidance.style.opacity = '0.6';
-baundDogGuidance.style.padding = '30px 30px 20px 30px';
-baundDogGuidance.style.fontSize = '80px';
-document.getElementsByTagName('body')[0].appendChild(baundDogGuidance);
-
+let styleClass = {
+    color: 'yellow',
+    position: 'absolute',
+    top: '0px',
+    left: '0px',
+    background: 'black',
+    borderRadius: '6px',
+    opacity: '0.6',
+    padding: '30px 30px 20px 30px',
+    fontSize: '80px'
+}
+let baundDogGuidance = document.createElement('div')
+baundDogGuidance.id = 'baund-dog-guidance'
+Object.assign(baundDogGuidance.style, styleClass)
+document.getElementsByTagName('body')[0].appendChild(baundDogGuidance)
 baundDogGuidance.addEventListener('mouseover', e => {
-    if (baundDogGuidance.style.top === '0px') {
-        baundDogGuidance.style.top = null;
-        baundDogGuidance.style.bottom = '0px';
+    if (top === '0px') {
+        top = null;
+        bottom = '0px';
     } else {
-        baundDogGuidance.style.top = '0px';
-        baundDogGuidance.style.bottom = null;
+        top = '0px';
+        bottom = null;
     }
 })
+
+var myHeaders = new Headers();
+
+var myInit = { method: 'POST',
+               headers: myHeaders,
+               cache: 'default' };
+
+fetch('flowers.jpg', myInit).then(function(response) {
+  return response.blob();
+}).then(function(myBlob) {
+  var objectURL = URL.createObjectURL(myBlob);
+  myImage.src = objectURL;
+});
 
 let onelement
 let listener = e => {
@@ -48,6 +63,9 @@ let listener = e => {
         message: baundDogGuidance.innerText.replace(',', ''),
         xpath: xpath
     }
+    let url = 'http://localhost:8080/users'
+    fetch(url, myInit).then(response => response.json()).then(data => console.log(data));
+    
     console.log('bd-message::' + JSON.stringify(message))
 }
 

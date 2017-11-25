@@ -7,7 +7,9 @@ const router = express.Router()
 const url = process.env.url || 'http://52.78.181.46/'
 
 router.get('/', (req, res) => {
-    res.render('index', { title: 'Baund-dog' })
+    res.render('index', {
+        title: 'Baund-dog',
+    })
 })
 
 router.post('/', (req, res, next) => {
@@ -20,7 +22,7 @@ router.post('/', (req, res, next) => {
 
     return (async () => {
         const launchoptions = {
-            headless: false,
+            headless: false
         }
         const page = await puppethelper.getPage(url, launchoptions)
 
