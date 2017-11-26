@@ -64,11 +64,6 @@ router.post('/', (req, res, next) => {
 
 module.exports = router
 
-// TODO 각 기능들 module.exports 해서 router 로 넣어주기
-// TODO 각 기능들 export 할때 내부 소스코드들 export 해주기
-// TODO module function 스타일 변경
-
-
 /*
 컨텐츠 페이지에 접속한다.
 {"context": {"JKB": "컨텐츠 페이지"}, "entities": ["url", "브라우저 종류"], "intent": "Open Browser", "tag": "Open Browser", "text": "컨텐츠 페이지에 접속한다."}
