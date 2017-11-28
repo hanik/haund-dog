@@ -50,7 +50,7 @@ const list = [
     'Add 버튼을 클릭한다.',
     'New playlist 메뉴를 클릭한다.',
     'Playlist Name을 rosatest로 입력한다',
-    'Target Resolution 리스트 박스를 클릭한다',
+    'Target Resolution 텍스트를 클릭한다',
     'Target Resolution을 HD 가로로 클릭한다.',
     'CREATE 버튼을 클릭한다',
     'PlayList Name에 rosatest 나타난다',

@@ -1,9 +1,11 @@
 const express = require('express')
+const recorder = require('./recorder')
 const puppethelper = require('../tools/puppet-helper')
 
 const router = express.Router()
 
 const url = 'http://52.78.181.46/' || process.env.url
+
 const runArray = []
 
 router.get('/', (req, res) => {

@@ -6,32 +6,33 @@ const cookieParser = require('cookie-parser')
 const bodyParser = require('body-parser')
 
 const index = require('./routes/index')
-const play = require('./routes/play')
-const users = require('./routes/users')
+const player = require('./routes/player')
+const users = require('./routes/users') // for test
+const recorder = require('./routes/recorder')
 
 const app = express()
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'pug')
+app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')))
 
-// uncomment after placing your favicon in /public
-// app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')))
 app.use(logger('dev'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
-app.use(function(req, res, next) {
+app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*')
-    res.header('Access-Control-Allow-Headers', 'X-Requested-With')
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type')
     res.header('Access-Control-Allow-Methods', 'POST, GET, OPTION, DELETE')
     next()
-});
+})
 
 app.use('/', index)
-app.use('/play', play)
-app.use('/users', users)
+app.use('/player', player)
+app.use('/users', users) // for test
+app.use('/recorder', recorder)
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

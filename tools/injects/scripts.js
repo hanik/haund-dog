@@ -1,4 +1,8 @@
-//TODO split for usecases
+/*
+// TODO "Client Injection code"
+ */
+
+// TODO split for usecases
 
 function getXPathForElement(element) {
     const idx = (sib, name) => sib
@@ -17,7 +21,24 @@ function getElementByXPath(path) {
         XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 }
 
-let styleClass = {
+
+const triggerListener = (e) => {
+    e.target.addEventListener('mouseover', () => {
+        if (e.target.style.top === '0px') {
+            e.target.style.top = null
+            e.target.style.bottom = '0px'
+        } else {
+            e.target.style.top = '0px'
+            e.target.style.bottom = null
+        }
+    })
+    e.target.style.top = null
+    e.target.style.bottom = '0px'
+    e.target.removeEventListener('click', triggerListener)
+}
+
+
+const styleClass = {
     color: 'yellow',
     position: 'absolute',
     top: '0px',
@@ -26,60 +47,72 @@ let styleClass = {
     borderRadius: '6px',
     opacity: '0.6',
     padding: '30px 30px 20px 30px',
-    fontSize: '80px'
+    fontSize: '80px',
 }
-let baundDogGuidance = document.createElement('div')
+const baundDogGuidance = document.createElement('div')
 baundDogGuidance.id = 'baund-dog-guidance'
+baundDogGuidance.innerText = '시작하려면 여기를 클릭하세요.'
 Object.assign(baundDogGuidance.style, styleClass)
 document.getElementsByTagName('body')[0].appendChild(baundDogGuidance)
-baundDogGuidance.addEventListener('mouseover', e => {
-    if (top === '0px') {
-        top = null;
-        bottom = '0px';
-    } else {
-        top = '0px';
-        bottom = null;
-    }
-})
+baundDogGuidance.addEventListener('click', triggerListener)
 
-var myHeaders = new Headers();
-
-var myInit = { method: 'POST',
-               headers: myHeaders,
-               cache: 'default' };
-
-fetch('flowers.jpg', myInit).then(function(response) {
-  return response.blob();
-}).then(function(myBlob) {
-  var objectURL = URL.createObjectURL(myBlob);
-  myImage.src = objectURL;
-});
-
-let onelement
-let listener = e => {
-    let xpath = getXPathForElement(this)
-    let message = {
+let scenarioData = []
+let currentStep = 0
+let onElement
+const listener = (e) => {
+    const xpath = getXPathForElement(e.target)
+    const currentScenario = scenarioData[currentStep]
+    const message = {
         type: 'bd-element-click',
-        message: baundDogGuidance.innerText.replace(',', ''),
-        xpath: xpath
+        message: currentScenario.text,
+        xpath,
+        scenarioData: currentScenario,
     }
-    let url = 'http://localhost:10801/users'
-    fetch(url, myInit).then(response => response.json()).then(data => console.log(data));
-    
-    console.log('bd-message::' + JSON.stringify(message))
+    // console.log(message)
+    if (currentScenario.intent && currentScenario.intent.search('Input') >= 0) {
+
+        // let elem = e.target
+        // elem.addEventListener('keydown', (keyEvent) => {
+        //     elem.value += keyEvent.keyCode
+        // })
+        // value.split('').forEach((input) => {
+        //     e.target.value = input
+        //     let event = document.createEvent( 'KeyboardEvent' );
+        //     event.initKeyboardEvent( 'keydown', true, false, null, 0, false, 0, false, 65, 0 );
+        //     e.target.dispatchEvent( event);
+        // })
+    }
+
+
+    const initFetch = {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify(message),
+    }
+    // console.log("initFetch : " + JSON.stringify(initFetch))
+
+    const url = 'http://localhost:10801/recorder/event'
+    fetch(url, initFetch)
+        .then(response => response.json())
+        .then(data => console.log(data))
+
+    currentStep += 1
+    baundDogGuidance.innerText = scenarioData[currentStep].text
 }
 
-document.body.addEventListener('mousemove', e => {
-    let x = e.clientX
-    let y = e.clientY
-    let elementMouseIsOver = document.elementFromPoint(x, y)
-    if (!elementMouseIsOver.isEqualNode(onelement)) {
-        if (onelement) {
-            onelement.style.border = 'none'
-            onelement.removeEventListener('click', listener)
+document.body.addEventListener('mousemove', (e) => {
+    const x = e.clientX
+    const y = e.clientY
+    const elementMouseIsOver = document.elementFromPoint(x, y)
+    if (!elementMouseIsOver.isEqualNode(onElement)) {
+        if (onElement) {
+            onElement.style.border = 'none'
+            onElement.removeEventListener('click', listener)
         }
-        onelement = elementMouseIsOver
-        onelement.style.border = '2px solid blue'
-        onelement.addEventListener('click', listener)
+        onElement = elementMouseIsOver
+        onElement.style.border = '2px solid blue'
+        onElement.addEventListener('click', listener)
     }
 })

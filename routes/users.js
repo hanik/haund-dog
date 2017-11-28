@@ -14,7 +14,7 @@ router.get('/', (req, res, next) => {
 
 router.post('/', (req, res, next) => {
     res.json({
-        bdMessage: 'Baund-dog got your message. '
+        bdMessage: 'Baund-dog got your message. ',
     })
     res.end()
 })

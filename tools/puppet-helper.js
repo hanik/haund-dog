@@ -1,162 +1,126 @@
 const puppeteer = require('puppeteer')
 const collector = require('./element-collector')
-const pubsub = require('pubsub-js')
-//TODO variables occurred concurrency problem
+// TODO variables occurred concurrency problem
 let browser
-let flag = false
-let currentStep = {}
 
+async function _handleAuth(page, id, pw) {
+    let user = 'nexshop'
+    let pass = 'wearethe1'
 
-//TODO split for behavior
+    if (id) user = id
+    if (pw) pass = pw
+    const auth = new Buffer(`${user}:${pass}`).toString('base64')
+    await page.setExtraHTTPHeaders({
+        Authorization: `Basic ${auth}`,
+    })
+}
+
+// TODO split for behavior
 const screenshot = async function (handle, additionalOptions) {
     let options = {}
-    if(!additionalOptions || !additionalOptions.path) {
-        options = {path: './screenshots/' + handle.url().split('://')[1].split('/')[0] + '.png', fullPage:  true}
+    if (!additionalOptions || !additionalOptions.path) {
+        options = {path: `./screenshots/${handle.url().split('://')[1].split('/')[0]}.png`, fullPage: true}
     }
-    options = _addsignOptions(options, additionalOptions)
-    if(!handle) {
+    options = Object.assign(options, additionalOptions)
+    if (!handle) {
         console.error('Puppeteer error : need url or handle for screenshot.')
         return
     }
     try {
         await handle.screenshot(options)
     } catch (err) {
-        console.error(err.toString() + ' : ' + options.path)
+        console.error(`${err.toString()} : ${options.path}`)
     }
 }
 
 const getPage = async function (url, additionalOptions) {
-    //TODO find and apply target page size
+    // TODO find and apply target page size
     let options = {
         headless: true,
         devtools: false,
         timeout: 30000,
         slowMo: 100,
-        args: ['--window-size=1280,960']
+        args: ['--window-size=1280,960'],
     }
-    options = _addsignOptions(options, additionalOptions)
-    if(!browser) browser = await puppeteer.launch(options)
-    let pages = await browser.pages()
-    let page = await pages[0]
+    options = Object.assign(options, additionalOptions)
+    if (!browser) browser = await puppeteer.launch(options)
+    const pages = await browser.pages()
+    const page = await pages[0]
     await _handleAuth(page)
 
-    let viewport = {
+    const viewport = {
         width: 1280,
-        height: 720
+        height: 720,
     }
     await page.setViewport(viewport)
     await page.goto(url)
     return page
 }
-    
+
 const close = async function (page) {
-    if(page) await page.close()
-    if(browser) {
+    if (page) await page.close()
+    if (browser) {
         await browser.close()
         browser = null
     }
-    return
-}
-    
-const execOCR = async function (cmd){
-    const execSync = require('child_process').execSync
-    execSync(cmd, (err, stdout, stderr) => {
-        if (err) {
-            console.log(`err: ${err}`)
-            return
-        }
-    })
 }
 
 const runAlone = async function (page, xpath, text, comment, action) {
-    await page.evaluate(comment => {
-        document.querySelector('#baund-dog-guidance').innerHTML = comment
+    await page.evaluate((commentText) => {
+        document.querySelector('#baund-dog-guidance').innerHTML = commentText
     }, comment)
-    let handle = await collector.gethandle(page, xpath)
+    const handle = await collector.gethandle(page, xpath)
     await page.waitFor(1000)
-    //TODO json
-    if(action === 'type') {
+    // TODO json
+    if (action === 'input') {
         await handle.type(text)
-    } else if (action === 'none'){
+    } else if (action === 'none') {
     } else {
         await handle.click()
     }
 }
 
+const runStep = async function (body, page) {
+    const step = body.scenarioData
+    const contents = Object.values(step.context)
+    const commandIntent = step.intent
+    let actionDescription
 
-//TODO 추가논의
-async function _wait(ms) {
-    return new Promise((resolve, reject) => {
-        let id = setInterval(() => {
-            if(flag) {
-                clearInterval(id)
-                resolve()
-            }
-        }, ms)
-    })
-}
+    console.log(`commandIntent : ${commandIntent}`)
+    if (commandIntent.search('Click') >= 0) actionDescription = 'click'
+    else if (commandIntent.search('Input') >= 0) actionDescription = 'input'
+    else if (commandIntent.search('should') >= 0) actionDescription = 'should'
+    else actionDescription = 'click'
 
-const _setCurrentStep = function (step, page) {
-    let contents = Object.values(step.context)
-    let intent = step.intent
-    let obj = {
-        page : page,
-        entities : step.entities,
-        intent : intent,
-        tag : step.tag,
-        text : step.text,
-        contents : contents,
-        target : contents[0],
-        input : (contents[1]) ? contents[1] : null,
-        action : (intent.indexOf('Input')==0) ? 'type' : 'click'
+    console.log(`actionDescription : ${actionDescription}`)
+
+    const commandContext = {
+        page,
+        entities: step.entities,
+        commandIntent,
+        tag: step.tag,
+        text: step.text,
+        contents,
+        from: contents[0],
+        to: (contents[1]) ? contents[1] : null,
+        action: actionDescription,
     }
-    currentStep = obj
-}
 
-pubsub.subscribe('CLICK', async function (msg, data) {
-    // await runAlone(currentStep.page, data.xpath, currentStep.input, currentStep.text, currentStep.action)
-    flag = true
-    console.log(data)
-})
-
-const runStep = async function (step, page) {
-    _setCurrentStep(step, page)
-
-    await page.evaluate(text => {
-        document.querySelector('#baund-dog-guidance').innerHTML = text
-    }, currentStep.text)
-
-    await _wait(1000)
-    flag = false
-}
-
-function _addsignOptions (defaults, additional) {
-    let options = defaults
-    if(additional) {
-        //TODO refactoring
-        Object.assign(options, additional)
+    const recordedCase = {
+        xpath: body.xpath,
+        comment: commandContext.text,
+        action: actionDescription,
+        from: commandContext.from,
+        to: commandContext.to,
     }
-    return options
-}
 
-async function _handleAuth (page, id, pw) {
-    let user = 'nexshop'
-    let pass = 'wearethe1'
-
-    if(id) user = id
-    if(pw) pass = pw
-    const auth = new Buffer(`${user}:${pass}`).toString('base64')
-    await page.setExtraHTTPHeaders({
-        'Authorization': `Basic ${auth}`
-    })
-    // page.on('request', request => console.log(`Request: ${request.resourceType}: ${request.url} (${JSON.stringify(request.headers)})`))`;`
+    return recordedCase
 }
 
 module.exports = {
-    screenshot, 
-    getPage, 
-    close, 
-    execOCR,
+    screenshot,
+    getPage,
+    close,
     runAlone,
-    runStep
+    runStep,
 }
