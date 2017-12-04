@@ -1,140 +1,133 @@
 const express = require('express')
 const recorder = require('./recorder')
 const puppethelper = require('../tools/puppet-helper')
+const puppeteer = require('puppeteer')
+const assert = require('assert');
 
 const router = express.Router()
 
-const url = 'http://52.78.181.46/' || process.env.url
+const url = process.env.url || 'http://52.78.181.46/'
 
-const runArray = []
-
+let runArray = []
 router.get('/', (req, res) => {
     (async () => {
         const launchoptions = {
             headless: false,
         }
-        const page = await puppethelper.getPage(url, launchoptions)
+        let page
 
-        await page.addScriptTag({
-            path: './tools/injects/scripts.js',
-        })
+        console.log(puppethelper.getRecords())
+        runArray = puppethelper.getRecords()
 
         // TODO XPath list from somewhere kindof database
-        // Add 버튼을 클릭한다.
-        runArray.push({
-            xpath: 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]',
-            comment: 'Add 버튼을 클릭한다.',
-            action: 'click',
-        })
-        // New playlist 메뉴를 선택한다.
-        runArray.push({
-            xpath: 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[4]/div[1]/div[6]',
-            comment: 'New playlist 메뉴를 선택한다.',
-            action: 'click',
-        })
-        // Playlist 이름을 rosatest로 입력한다
-        runArray.push({
-            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input',
-            comment: 'Playlist 이름을 rosatest로 입력한다',
-            text: 'rosatest',
-            action: 'type',
-        })
-        // Target Resolution을
-        runArray.push({
-            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label',
-            comment: 'Target Resolution을',
-            action: 'click',
-        })
-        // HD 가로로 선택한다.
-        runArray.push({
-            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]',
-            comment: 'HD 가로로 선택한다',
-            action: 'click',
-        })
-        // CREATE 버튼을 클릭한다
-        runArray.push({
-            xpath: '//*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]',
-            comment: 'CREATE 버튼을 클릭한다',
-            action: 'click',
-        })
-        // Playlist 페이지가 나타난다
-        runArray.push({
-            xpath: '//*[@id="root"]/div/div[1]/div/div[1]/div[1]',
-            comment: 'Playlist 페이지가 나타난다',
-            action: 'none',
+        runArray = getDemo()
+        console.log(runArray)
+
+        var Mocha = require('mocha')
+
+        var utc = new Date().toJSON().slice(0, 10).replace(/-/g, '')
+
+        var mocha = new Mocha({
+            timeout: 500000,
+            bail: false,
+            reporter: 'mochawesome',
+            reporterOptions: {
+                reportDir: 'public/rosamiaTestResult',
+                reportTitle: 'Testcase Result Scenario Name',
+                reportPageTitle: 'Rosamia Test Result',
+                reportFilename: `TESTRESULT_${utc}`,
+                autoOpen: true,
+            },
         })
 
-        for (let i = 0; i < runArray.length; i++) {
+        var suiteInstance = Mocha.Suite.create(mocha.suite, 'Test Suite')
+        const Test = Mocha.Test
+
+        suiteInstance.beforeAll('Open Browser', async () => {
+            page = await puppethelper.getPage(url, launchoptions)
+            await page.addScriptTag({
+                path: './tools/injects/scripts.js',
+            })
+        })
+
+        suiteInstance.afterAll('Close Browser', async () => {
+            await puppethelper.close(page)
+        })
+
+        let isFailed = false
+        for (let i = 0; i < runArray.length; i += 1) {
             const run = runArray[i]
             try {
-                await puppethelper.runAlone(page, run.xpath, run.text, run.comment, run.action)
+                suiteInstance.addTest(new Test(`testing ${run.comment}`, async () => {
+                    if (isFailed) assert.fail('Failed :: Because previous test step Failed!')
+                    await puppethelper.runAlone(page, run.xpath, run.to, run.comment, run.action)
+                }))
             } catch (error) {
                 console.error(`runAlone ERROR:: ${error.message}`)
             }
         }
 
-        const result = ['Success.']
-        await puppethelper.close(page)
+        mocha.run()
+            .on('pass', () => {
+                console.log('Test passed')
+            })
+            .on('fail', (test, err) => {
+                console.log('Test fail')
+                console.log(err.message)
+                isFailed = true
+            })
 
+        const result = ['Success.']
         res.send(JSON.stringify(result))
     })()
 })
 
-module.exports = router
-
-// TODO 각 기능들 module.exports 해서 router 로 넣어주기
-// TODO 각 기능들 export 할때 내부 소스코드들 export 해주기
-// TODO module function 스타일 변경
-// TODO async await excption handling 확인하기
-
-/*
-컨텐츠 페이지에 접속한다.
-{"context": {"JKB": "컨텐츠 페이지"}, "entities": ["url", "브라우저 종류"], "intent": "Open Browser", "tag": "Open Browser", "text": "컨텐츠 페이지에 접속한다."}
-
-Add 버튼을 클릭한다.
-{"context": {"JKO": "add 버튼"}, "entities": ["[이벤트] 오브젝트"], "intent": "Click Element", "tag": "Click Element", "text": "add 버튼을 클릭한다."}
-
-New playlist 메뉴를 선택한다.
-Playlist Name을 rosatest로 입력한다
-Target Resolution을 HD의 가로로 선택한다.
-CREATE 버튼을 클릭한다
-Playlist 페이지가 나타난다
-PlayList Name에 rosatest가 나타난다
-Target Resolution은 HD로 나타난다
-Target Resolution은 가로로 나타난다
-이미지 컨텐트를 Playlist로 드래그앤 드롭한다.
-이미지 컨텐트가 Playlist에 나타난다
-Playlist 목록 개수가 01로 표시된다
-전체 재생 시간은 이미지 컨텐츠 재생시간과 동일하다
-Save 버튼을 클릭한다
-컨텐츠 페이지로 이동된다
-컨텐츠 페이지 목록에 추가한 Playlist가 조회된다.
- */
-
-/*
-{
-    "text": "컨텐츠 페이지에 접속한다.",
-    "intent": "input text",
-    "entities": [ { "entity": "[이벤트] 텍스트 입력 창" }, { "entity": "입력 할 텍스트" } ],
-    "context":	[ { "JKB": "로그인 창" }, { "JKO": "rosatest" } ],
-    "tag": "텍스트 입력(동사)",
-    "xpath" : "path...."
+function getDemo() {
+    const demoArray = []
+    // Add 버튼을 클릭한다.
+    demoArray.push({
+        xpath: 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]',
+        comment: 'Add 버튼을 클릭한다.',
+        action: 'click',
+    })
+    // New playlist 메뉴를 선택한다.
+    demoArray.push({
+        xpath: 'id(\'root\')/div[1]/div[1]/div[1]/div[2]/div[4]/div[1]/div[6]',
+        comment: 'New playlist 메뉴를 선택한다.',
+        action: 'click',
+    })
+    // Playlist 이름을 rosatest로 입력한다
+    demoArray.push({
+        xpath: '//*[@id=\'root\']/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input',
+        comment: 'Playlist 이름을 rosatest로 입력한다',
+        to: 'rosatest11111',
+        action: 'type',
+    })
+    // Target Resolution을
+    demoArray.push({
+        xpath: '//*[@id=\'root\']/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[3]/div/div/label',
+        comment: 'Target Resolution을',
+        action: 'click',
+    })
+    // HD 가로로 선택한다.
+    demoArray.push({
+        xpath: '//*[@id=\'root\']/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[3]/div/div[2]/div[3]/div/div[1]',
+        comment: 'HD 가로로 선택한다',
+        action: 'click',
+    })
+    // CREATE 버튼을 클릭한다
+    demoArray.push({
+        xpath: '//*[@id=\'root\']/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]',
+        comment: 'CREATE 버튼을 클릭한다',
+        action: 'click',
+    })
+    // Playlist 페이지가 나타난다
+    demoArray.push({
+        xpath: '//*[@id=\'root\']/div/div[1]/div/div[1]/div[1]',
+        comment: 'Playlist 페이지가 나타난다',
+        action: 'none',
+    })
+    return demoArray
 }
- */
 
-/*
-add button : //*[@id="root"]/div/div[1]/div/div[2]/div[2]/div
-text 가능 New playlist : //*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[6]
-text 가능 Playlist Name : //*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/input
-                input : rosatest
-Target Resolution combo : //*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[1]/label
-Target Resolution : //*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[1]/div[2]/div/div[2]/div[3]/div/div[1]
-                HD, vertical
-text 가능 CREATE : //*[@id="root"]/div/div[1]/div/div[2]/div[4]/div/div[1]/div[2]/div/div[2]/div[1]
-rosatest 페이지 : //*[@id="root"]/div/div[1]/div/div[1]/div[1]
-Drag & Drop : ??????
-Playlist 개수 : 01
-        <div class="playlist-summary"><span class="playlist-summary__label">Counts</span><span class="playlist-summary__value">01</span><span class="playlist-summary__label">Total</span><span class="playlist-summary__value">00:00:30</span></div>
-Save 버튼 : <div class="top-bar-sub-menu__item">SAVE</div>
-            //*[@id="root"]/div/div[1]/div/div[1]/div[2]/div[2]
- */
+module.exports = router

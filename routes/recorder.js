@@ -4,15 +4,22 @@ const puppetHelper = require('../tools/puppet-helper')
 const router = express.Router()
 
 // TODO gaplant 로부터 받아야함
-const url = process.env.url || 'http://52.78.181.46/'
+let url = process.env.url || 'http://52.78.181.46/'
+let testCaseId = ''
+let scenario = ''
 let page = null
-let recordedCases = []
 
 router.post('/', (req, res) => {
     console.log('baund-dog recorder post method')
     if (!req.body) return res.sendStatus(400)
 
-    const data = req.body
+    const requestBody = req.body
+    const data = requestBody.testSteps
+    if (requestBody.targetUrl) url = requestBody.targetUrl
+    if (requestBody.testCaseId) testCaseId = requestBody.testCaseId
+    if (requestBody.scenario) scenario = requestBody.scenario
+
+    console.log(data)
     console.log(`data.length : ${data.length}`)
 
     return (async () => {
@@ -27,26 +34,24 @@ router.post('/', (req, res) => {
         await page.evaluate((inputScenario) => {
             scenarioData = inputScenario
         }, data)
-        const result = ['on-going...']
-
+        const result = 'on-going....'
+        puppetHelper.resetRecords()
         return res.send(JSON.stringify(result))
     })()
 })
 
 router.post('/event', (req, res) => {
     const bodyMessage = req.body
-
+    console.log(`bodyMessage : ${bodyMessage}`)
     return (async () => {
-        const recordedCase = await puppetHelper.runStep(bodyMessage, page)
-        recordedCases.push(recordedCase)
-
-        console.log(`recordedCases : ${JSON.stringify(recordedCases)}`)
-        return res.send(JSON.stringify('하나더 스텝 끝'))
+        await puppetHelper.runStep(bodyMessage, page)
+        return res.send(JSON.stringify('step end.'))
     })()
 })
 
-router.post('/type', (req, res) => {
-
+router.get('/end', (req, res) => {
+    console.log(puppetHelper.getRecords())
+    res.send(JSON.stringify('끝났어 잘했어.'))
 })
 
 module.exports = router

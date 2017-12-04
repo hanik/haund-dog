@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer')
 const collector = require('./element-collector')
 // TODO variables occurred concurrency problem
 let browser
+let recordedCases = []
 
 async function _handleAuth(page, id, pw) {
     let user = 'nexshop'
@@ -13,6 +14,15 @@ async function _handleAuth(page, id, pw) {
     await page.setExtraHTTPHeaders({
         Authorization: `Basic ${auth}`,
     })
+}
+
+async function _typing(page, xpath, text) {
+    const handle = await collector.gethandle(page, xpath)
+    try {
+        await handle.type(text)
+    } catch (err) {
+        console.error(`${err.toString()} : ${text}`)
+    }
 }
 
 // TODO split for behavior
@@ -43,9 +53,8 @@ const getPage = async function (url, additionalOptions) {
         args: ['--window-size=1280,960'],
     }
     options = Object.assign(options, additionalOptions)
-    if (!browser) browser = await puppeteer.launch(options)
-    const pages = await browser.pages()
-    const page = await pages[0]
+    browser = await puppeteer.launch(options)
+    const page = await browser.newPage()
     await _handleAuth(page)
 
     const viewport = {
@@ -54,6 +63,17 @@ const getPage = async function (url, additionalOptions) {
     }
     await page.setViewport(viewport)
     await page.goto(url)
+    page.on('console', async (msg) => {
+        if (msg.text.search('bd-message::') === 0) {
+            try {
+                const messageText = msg.text.replace('bd-message::', '')
+                const message = JSON.parse(messageText)
+                await _typing(page, message.xpath, message.text)
+            } catch (error) {
+                console.error(error.toString())
+            }
+        }
+    })
     return page
 }
 
@@ -65,6 +85,13 @@ const close = async function (page) {
     }
 }
 
+
+const goto = async function (page, url) {
+    await page.goto(url)
+    return page
+}
+
+
 const runAlone = async function (page, xpath, text, comment, action) {
     await page.evaluate((commentText) => {
         document.querySelector('#baund-dog-guidance').innerHTML = commentText
@@ -72,7 +99,7 @@ const runAlone = async function (page, xpath, text, comment, action) {
     const handle = await collector.gethandle(page, xpath)
     await page.waitFor(1000)
     // TODO json
-    if (action === 'input') {
+    if (action === 'type') {
         await handle.type(text)
     } else if (action === 'none') {
     } else {
@@ -86,13 +113,10 @@ const runStep = async function (body, page) {
     const commandIntent = step.intent
     let actionDescription
 
-    console.log(`commandIntent : ${commandIntent}`)
     if (commandIntent.search('Click') >= 0) actionDescription = 'click'
     else if (commandIntent.search('Input') >= 0) actionDescription = 'input'
     else if (commandIntent.search('should') >= 0) actionDescription = 'should'
     else actionDescription = 'click'
-
-    console.log(`actionDescription : ${actionDescription}`)
 
     const commandContext = {
         page,
@@ -106,15 +130,34 @@ const runStep = async function (body, page) {
         action: actionDescription,
     }
 
+    // const recoredCaseEntity = {
+    //     commandContext.entities[0] + commandContext.from : body.xpath
+    //
+    // }
+
     const recordedCase = {
         xpath: body.xpath,
         comment: commandContext.text,
         action: actionDescription,
         from: commandContext.from,
         to: commandContext.to,
+        intent: commandIntent,
+        entity: [{
+        }],
     }
 
-    return recordedCase
+    if (!recordedCase.xpath.includes('baund-dog-guidance')) {
+        console.log(recordedCases)
+        recordedCases.push(recordedCase)
+    }
+}
+
+const resetRecords = function () {
+    recordedCases = []
+}
+
+const getRecords = function () {
+    return recordedCases
 }
 
 module.exports = {
@@ -123,4 +166,7 @@ module.exports = {
     close,
     runAlone,
     runStep,
+    resetRecords,
+    getRecords,
+    goto,
 }

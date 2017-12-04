@@ -47,7 +47,7 @@ const styleClass = {
     borderRadius: '6px',
     opacity: '0.6',
     padding: '30px 30px 20px 30px',
-    fontSize: '80px',
+    fontSize: '60px',
 }
 const baundDogGuidance = document.createElement('div')
 baundDogGuidance.id = 'baund-dog-guidance'
@@ -62,25 +62,30 @@ let onElement
 const listener = (e) => {
     const xpath = getXPathForElement(e.target)
     const currentScenario = scenarioData[currentStep]
+
+    if (!currentScenario) {
+        const url = 'http://localhost:10801/recorder/end'
+        fetch(url, { method: 'GET' })
+            .then(response => response.json())
+            .then(data => console.log(data))
+        return
+    }
     const message = {
         type: 'bd-element-click',
-        message: currentScenario.text,
+        message: (currentScenario.text) ? currentScenario.text : '',
         xpath,
         scenarioData: currentScenario,
     }
     // console.log(message)
     if (currentScenario.intent && currentScenario.intent.search('Input') >= 0) {
-
-        // let elem = e.target
-        // elem.addEventListener('keydown', (keyEvent) => {
-        //     elem.value += keyEvent.keyCode
-        // })
-        // value.split('').forEach((input) => {
-        //     e.target.value = input
-        //     let event = document.createEvent( 'KeyboardEvent' );
-        //     event.initKeyboardEvent( 'keydown', true, false, null, 0, false, 0, false, 65, 0 );
-        //     e.target.dispatchEvent( event);
-        // })
+        const value = Object.values(currentScenario.context)[1]
+        const consoleMessage = {
+            type: 'bd-element-type',
+            text: value,
+            action: 'type',
+            xpath,
+        }
+        console.log(`bd-message::${JSON.stringify(consoleMessage)}`)
     }
 
 
@@ -99,7 +104,9 @@ const listener = (e) => {
         .then(data => console.log(data))
 
     currentStep += 1
-    baundDogGuidance.innerText = scenarioData[currentStep].text
+    if (scenarioData.length > currentStep) {
+        baundDogGuidance.innerText = scenarioData[currentStep].text
+    }
 }
 
 document.body.addEventListener('mousemove', (e) => {
